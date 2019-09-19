@@ -82,4 +82,93 @@ sum
 (display-stream z)
 sum
 
-  
+(define (integers-starting-from n)
+  (cons-stream n (integers-starting-from (+ n 1))))
+
+(define (divisible? x y)
+  (= (remainder x y) 0))
+
+(define (sieve stream)
+  (cons-stream
+   (stream-car stream)
+   (sieve (stream-filter
+          (lambda (x)
+            (not (divisible? x (stream-car stream))))
+          (stream-cdr stream)))))
+
+(define primes (sieve (integers-starting-from 2)))
+
+(stream-ref primes 50)
+
+(define (stream-map2 proc . list-of-stream)
+    (if (null? (car list-of-stream))
+        '()
+        (cons-stream
+            (apply proc 
+                   (map (lambda (s)
+                            (stream-car s))
+                        list-of-stream))
+            (apply stream-map2 
+                   (cons proc (map (lambda (s)
+                                       (stream-cdr s))
+                                   list-of-stream))))))
+
+(define (add-streams s1 s2)
+  (stream-map2 + s1 s2))
+
+(define (mul-streams s1 s2)
+  (stream-map2 * s1 s2))
+
+(define ones (cons-stream 1 ones))
+
+(define integers (cons-stream 1 (add-streams ones integers)))
+
+(define factorial
+    (cons-stream 1 
+                 (mul-streams factorial
+                              (stream-cdr integers))))
+
+(define (partial-sums s)
+  (cons-stream (stream-car s) (add-streams (stream-cdr s) (partial-sums s))))
+
+(stream-ref (partial-sums integers)  9)
+
+
+(define (average x y) (/ (+ x y) 2))
+
+(define (sqrt-improve guess x)
+  (average guess (/ x guess)))
+
+(define (sqrt-stream x)
+  (define guesses
+    (cons-stream 1.0
+                 (stream-map (lambda (guess)
+                               (sqrt-improve guess x))
+                             guesses)))
+  guesses)
+
+(define (interleave s1 s2)
+  (if (stream-null? s1)
+      s2
+      (cons-stream (stream-car s1)
+                   (interleave s2 (stream-cdr s1)))))
+
+(define (pairs s t)
+  (cons-stream
+   (list (stream-car s) (stream-car t))
+   (interleave
+    (stream-map (lambda (x) (list (stream-car s) x))
+                (stream-cdr t))
+    (pairs (stream-cdr s) (stream-cdr t)))))
+
+(define (s i)
+  (define (iter start)
+    (if (= start i) (display 'end)
+(begin (display (stream-ref (pairs integers integers) start))(display start)(newline) (iter (+ 1 start)))
+  )
+   
+    )
+   (iter 0)
+  )
+
+(s 100)
